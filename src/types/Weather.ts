@@ -27,3 +27,13 @@ export type WeatherDetailProps = {
   label: string;
   value: string | number;
 };
+
+export type ForecastDay = {
+  Date: string;
+  MaxTempC: number;
+  MinTempC: number;
+  WindKPH: number;
+  Cloud: number;
+  ChanceOfRain: number;
+  Condition: WeatherCondition;
+};

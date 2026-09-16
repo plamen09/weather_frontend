@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import "../App.css";
 
-import type { CurrentWeather, WeatherDetailProps } from "../types/Weather";
-
-import { weatherClieant } from "../api/WeatherClient";
+import type {
+  CurrentWeather,
+  ForecastDay,
+  WeatherDetailProps,
+} from "../types/Weather";
 
 import {
   Cloud,
@@ -14,12 +16,14 @@ import {
   Thermometer,
   Wind,
 } from "lucide-react";
+import { weatherClient } from "../api/WeatherClient";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 function WeatherDetail({ icon: Icon, label, value }: WeatherDetailProps) {
   return (
-    <div className="flex items-center justify-between rounded-xl border border-white/20 bg-white/10 p-4 transition-all duration-300 hover:-translate-1 hover-white/20 hover:shadow-lg ">
+    <div className="flex items-center justify-between rounded-xl border border-white/20 bg-white/10 p-4 transition-all duration-300 hover:-translate-y-1 hover:bg-white/20 hover:shadow-lg ">
       <div className="flex items-center gap-3">
-        <Icon size={26} className="h-20 w-20 weather-icon-float" />
+        <Icon size={26} className="text-sky-300" />
 
         <span className="text-sm text-white/70">{label}</span>
       </div>
@@ -32,9 +36,13 @@ function WeatherDetail({ icon: Icon, label, value }: WeatherDetailProps) {
 function WeatherPage() {
   const [city, setCity] = useState("");
   const [weather, setWeather] = useState<CurrentWeather | null>(null);
+  const [forecast, setForecast] = useState<ForecastDay[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
+  const cityFromUrl = searchParams.get("city");
   const searchWeather = async () => {
     const trimmedCity = city.trim();
 
@@ -47,16 +55,51 @@ function WeatherPage() {
       setLoading(true);
       setError(null);
 
-      const result = await weatherClieant.GetCurrentWeather(trimmedCity);
+      const [result, forecastResult] = await Promise.all([
+        weatherClient.GetCurrentWeather(trimmedCity),
+        weatherClient.GetForecast(trimmedCity),
+      ]);
 
       setWeather(result);
+      setForecast(forecastResult);
+      navigate(`/?city=${encodeURIComponent(trimmedCity)}`);
     } catch {
       setWeather(null);
+      setForecast([]);
       setError("Could not find weather for this city");
     } finally {
       setLoading(false);
     }
   };
+  useEffect(() => {
+    if (!cityFromUrl) {
+      return;
+    }
+
+    const loadWeather = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        setCity(cityFromUrl);
+
+        const [weatherResult, forecastResult] = await Promise.all([
+          weatherClient.GetCurrentWeather(cityFromUrl),
+          weatherClient.GetForecast(cityFromUrl),
+        ]);
+
+        setWeather(weatherResult);
+        setForecast(forecastResult);
+      } catch {
+        setWeather(null);
+        setError("Could not load weather");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadWeather();
+  }, [cityFromUrl]);
 
   const getCurrentLocation = () => {
     navigator.geolocation.getCurrentPosition(
@@ -70,11 +113,16 @@ function WeatherPage() {
           setLoading(true);
           setError(null);
 
-          const result = await weatherClieant.GetCurrentWeather(location);
+          const [result, forecastResult] = await Promise.all([
+            weatherClient.GetCurrentWeather(location),
+            weatherClient.GetForecast(location),
+          ]);
 
           setWeather(result);
+          setForecast(forecastResult);
         } catch {
           setWeather(null);
+          setForecast([]);
           setError("Failed to get weather");
         } finally {
           setLoading(false);
@@ -86,9 +134,8 @@ function WeatherPage() {
       },
     );
   };
-
   return (
-    <div className="min-h-screen bg-linear-to-br from-sky-400 via-blue-500 to-indigo-700 p-6">
+    <div className="min-h-screen w-full bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-700 p-6">
       <div className="mx-auto max-w-4xl rounded-3xl border border-white/20 bg-white/15 p-8 text-white shadow-2xl backdrop-blur-xl">
         <h1 className="text-3xl font-bold">Weather</h1>
 
@@ -113,6 +160,7 @@ function WeatherPage() {
 
           <button
             type="submit"
+            onClick={() => navigate(`/?city=${encodeURIComponent(city!)}`)}
             disabled={city.trim() === "" || loading}
             className="rounded-xl bg-white px-6 py-3 font-semibold text-blue-700 transition-all  duration-200 hover:scale-105  hover:bg-blue-50 active:scale-95 disabled:opacity-50 "
           >
@@ -212,14 +260,48 @@ function WeatherPage() {
                   />
                 </div>
               ))}
+              <div className="mt-8">
+                <h3 className="mb-4 text-xl font-semibold">Forecast</h3>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {forecast.map((day) => (
+                    <div
+                      key={day.Date}
+                      onClick={() =>
+                        navigate(
+                          `/weather/${encodeURIComponent(weather.Name)}/${day.Date}`,
+                        )
+                      }
+                      className="cursor-pointer rounded-2xl border border-white/20 bg-white/10 p-4 transition-all duration-300 hover:-translate-y-1 hover:bg-white/20 hover:shadow-lg"
+                    >
+                      <h2 className="text-2xl font-semibold">
+                        {new Date(day.Date).toLocaleDateString("en-US", {
+                          weekday: "long",
+                        })}
+                      </h2>
+
+                      <p>{day.Date}</p>
+
+                      <img
+                        src={`https:${day.Condition.icon}`}
+                        alt={day.Condition.text}
+                        className="mx-auto h-14 w-14"
+                      />
+
+                      <p>
+                        {day.MaxTempC}° / {day.MinTempC}°
+                      </p>
+
+                      <p>{day.ChanceOfRain}% rain</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         ) : (
           <div className="mt-10 flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
             <Cloud size={48} className="mb-4 text-white/60" />
-
-            <h2 className="text-xl font-semibold">No weather data yet</h2>
-
             <p className="mt-2 text-sm text-white/60">
               Search for a city or use your current location to see the weather.
             </p>
