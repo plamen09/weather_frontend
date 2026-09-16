@@ -17,11 +17,21 @@ import {
   Wind,
 } from "lucide-react";
 import { weatherClient } from "../api/WeatherClient";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
-function WeatherDetail({ icon: Icon, label, value }: WeatherDetailProps) {
+function WeatherDetail({
+  icon: Icon,
+  label,
+  value,
+  delay = 0,
+}: WeatherDetailProps) {
   return (
-    <div className="flex items-center justify-between rounded-xl border border-white/20 bg-white/10 p-4 transition-all duration-300 hover:-translate-y-1 hover:bg-white/20 hover:shadow-lg ">
+    <div
+      className="weather-detail flex items-center justify-between rounded-xl border border-white/20 bg-white/10 p-4 transition-all duration-300 hover:-translate-y-1 hover:bg-white/20 hover:shadow-lg "
+      style={{
+        animationDelay: `${delay}m`,
+      }}
+    >
       <div className="flex items-center gap-3">
         <Icon size={26} className="text-sky-300" />
 
@@ -250,20 +260,21 @@ function WeatherPage() {
                 <div
                   key={detail.label}
                   className="detail-enter"
-                  style={{ animationDelay: `${index * 80}ms` }}
+                  style={{ animationDelay: `${index * 300}ms` }}
                 >
                   <WeatherDetail
                     key={detail.label}
                     icon={detail.icon}
                     label={detail.label}
                     value={detail.value}
+                    delay={index * 300}
                   />
                 </div>
               ))}
               <div className="mt-8">
                 <h3 className="mb-4 text-xl font-semibold">Forecast</h3>
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="flex flex-col gap-3">
                   {forecast.map((day) => (
                     <div
                       key={day.Date}
@@ -281,13 +292,6 @@ function WeatherPage() {
                       </h2>
 
                       <p>{day.Date}</p>
-
-                      <img
-                        src={`https:${day.Condition.icon}`}
-                        alt={day.Condition.text}
-                        className="mx-auto h-14 w-14"
-                      />
-
                       <p>
                         {day.MaxTempC}° / {day.MinTempC}°
                       </p>

@@ -1,13 +1,30 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { weatherClient } from "../api/WeatherClient";
-import type { ForecastDay } from "../types/Weather";
+import type { ForcastDetailProps, ForecastDay } from "../types/Weather";
+
+function ForcastDetail({ label, value, delay = 0 }: ForcastDetailProps) {
+  return (
+    <div
+      className="forcast-detail flex items-center justify-between rounded-xl border border-white/20 bg-white/10 p-4 transition-all duration-300 hover:-translate-y-1 hover:bg-white/20 hover:shadow-lg"
+      style={{
+        animationDelay: `${delay}m`,
+      }}
+    >
+      <span className="text-lg">
+        {label}
+      </span>
+      <strong className="text-lg">{value}</strong>
+    </div>
+  );
+}
 
 function ForecastDayPage() {
   const { city, date } = useParams();
   const navigate = useNavigate();
   const [day, setDay] = useState<ForecastDay | null>(null);
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     const loadForecast = async () => {
       if (!city || !date) {
@@ -68,28 +85,41 @@ function ForecastDayPage() {
         <p className="text-center text-xl">{day.Condition.text}</p>
 
         <div className="mt-8 space-y-3">
-          <div className="flex justify-between rounded-xl bg-white/10 p-4">
-            <span>Maximum temperature</span>
-            <strong>{day.MaxTempC}°C</strong>
-          </div>
-
-          <div className="flex justify-between rounded-xl bg-white/10 p-4">
-            <span>Minimum temperature</span>
-            <strong>{day.MinTempC}°C</strong>
-          </div>
-          <div className="flex justify-between rounded-xl bg-white/10 p-4">
-            <span>Wind</span>
-            <strong>{day.WindKPH}km/h</strong>
-          </div>
-          <div className="flex justify-between rounded-xl bg-white/10 p-4">
-            <span>Cloud</span>
-            <strong> {day.Cloud}%</strong>
-          </div>
-
-          <div className="flex justify-between rounded-xl bg-white/10 p-4">
-            <span>Chance of rain</span>
-            <strong>{day.ChanceOfRain}%</strong>
-          </div>
+          {[
+            {
+              label: "Maximum temerature",
+              value: `${day.MaxTempC}C`,
+            },
+            {
+              label: "Minimum temperature",
+              value: `${day.MinTempC}C`,
+            },
+            {
+              label: "Wind",
+              value: `${day.WindKPH}km/h`,
+            },
+            {
+              label: "Cloud",
+              value: `${day.Cloud}%`,
+            },
+            {
+              label: "Chanse of rain",
+              value: `${day.ChanceOfRain}%`,
+            },
+          ].map((detail, index) => (
+            <div
+              key={detail.label}
+              className="detail-forcast"
+              style={{ animationDelay: `${index * 300}ms` }}
+            >
+              <ForcastDetail
+                key={detail.label}
+                label={detail.label}
+                value={detail.value}
+                delay={index * 300}
+              />
+            </div>
+          ))}
         </div>
       </div>
     </div>

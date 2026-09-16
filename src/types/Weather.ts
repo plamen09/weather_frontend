@@ -26,6 +26,13 @@ export type WeatherDetailProps = {
   icon: LucideIcon;
   label: string;
   value: string | number;
+  delay?: number;
+};
+
+export type ForcastDetailProps = {
+  label: string;
+  value: string | number;
+  delay?: number;
 };
 
 export type ForecastDay = {
