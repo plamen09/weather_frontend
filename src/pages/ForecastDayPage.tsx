@@ -1,19 +1,17 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { weatherClient } from "../api/WeatherClient";
-import type { ForcastDetailProps, ForecastDay } from "../types/Weather";
+import type { ForcastDetailProps, ForecastDay } from "../Types/Forcast";
 
 function ForcastDetail({ label, value, delay = 0 }: ForcastDetailProps) {
   return (
     <div
       className="forcast-detail flex items-center justify-between rounded-xl border border-white/20 bg-white/10 p-4 transition-all duration-300 hover:-translate-y-1 hover:bg-white/20 hover:shadow-lg"
       style={{
-        animationDelay: `${delay}m`,
+        animationDelay: `${delay}ms`,
       }}
     >
-      <span className="text-lg">
-        {label}
-      </span>
+      <span className="text-lg">{label}</span>
       <strong className="text-lg">{value}</strong>
     </div>
   );
@@ -24,6 +22,7 @@ function ForecastDayPage() {
   const navigate = useNavigate();
   const [day, setDay] = useState<ForecastDay | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadForecast = async () => {
@@ -33,10 +32,13 @@ function ForecastDayPage() {
 
       try {
         setLoading(true);
+        setError(null)
         const forecast = await weatherClient.GetForecast(city);
 
         const selectedDay = forecast.find((item) => item.Date === date);
         setDay(selectedDay ?? null);
+      } catch {
+        setError("forcast not found!")
       } finally {
         setLoading(false);
       }
@@ -84,6 +86,45 @@ function ForecastDayPage() {
 
         <p className="text-center text-xl">{day.Condition.text}</p>
 
+        <div className="mt-8">
+          <h2 className="mb-4 text-xl font-semibold">Hourly forecast</h2>
+
+          <div className="flex gap-3 overflow-x-auto pb-4">
+            {day.Hours.map((hour) => (
+              <div
+                key={hour.Time}
+                className="min-w-32 rounded-xl border border-white/20 bg-white/10 p-4 text-center transition-all duration-300 hover:-translate-y-1 hover:bg-white/20"
+              >
+                <p className="text-sm text-white/60">
+                  {new Date(hour.Time.replace(" ", "T")).toLocaleTimeString(
+                    "en-US",
+                    {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    },
+                  )}
+                </p>
+
+                <img
+                  src={`https:${hour.Condition.icon}`}
+                  alt={hour.Condition.text}
+                  className="mx-auto h-12 w-12"
+                />
+
+                <strong className="block text-xl">{hour.TempC}°C</strong>
+
+                <p className="mt-1 text-xs text-white/60">
+                  {hour.Condition.text}
+                </p>
+
+                <p className="mt-2 text-sm text-sky-200">
+                  💧 {hour.ChanceOfRain}%
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="mt-8 space-y-3">
           {[
             {
@@ -110,13 +151,13 @@ function ForecastDayPage() {
             <div
               key={detail.label}
               className="detail-forcast"
-              style={{ animationDelay: `${index * 300}ms` }}
+              style={{ animationDelay: `${index * 400}ms` }}
             >
               <ForcastDetail
                 key={detail.label}
                 label={detail.label}
                 value={detail.value}
-                delay={index * 300}
+                delay={index * 400}
               />
             </div>
           ))}

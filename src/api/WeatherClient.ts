@@ -1,4 +1,5 @@
-import type { CurrentWeather, ForecastDay } from "../types/Weather";
+import type { ForecastDay } from "../Types/Forcast";
+import type { CurrentWeather } from "../Types/Weather";
 import { apiClient } from "./ApiClient";
 
 export class WeatherClient {

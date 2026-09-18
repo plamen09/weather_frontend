@@ -2,11 +2,7 @@ import { useEffect, useState } from "react";
 
 import "../App.css";
 
-import type {
-  CurrentWeather,
-  ForecastDay,
-  WeatherDetailProps,
-} from "../types/Weather";
+import type { CurrentWeather, WeatherDetailProps } from "../Types/Weather";
 
 import {
   Cloud,
@@ -18,6 +14,7 @@ import {
 } from "lucide-react";
 import { weatherClient } from "../api/WeatherClient";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import type { ForecastDay } from "../Types/Forcast";
 
 function WeatherDetail({
   icon: Icon,
@@ -29,7 +26,7 @@ function WeatherDetail({
     <div
       className="weather-detail flex items-center justify-between rounded-xl border border-white/20 bg-white/10 p-4 transition-all duration-300 hover:-translate-y-1 hover:bg-white/20 hover:shadow-lg "
       style={{
-        animationDelay: `${delay}m`,
+        animationDelay: `${delay}ms`,
       }}
     >
       <div className="flex items-center gap-3">
@@ -260,14 +257,14 @@ function WeatherPage() {
                 <div
                   key={detail.label}
                   className="detail-enter"
-                  style={{ animationDelay: `${index * 300}ms` }}
+                  style={{ animationDelay: `${index * 400}ms` }}
                 >
                   <WeatherDetail
                     key={detail.label}
                     icon={detail.icon}
                     label={detail.label}
                     value={detail.value}
-                    delay={index * 300}
+                    delay={index * 400}
                   />
                 </div>
               ))}

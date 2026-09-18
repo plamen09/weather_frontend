@@ -1,6 +1,6 @@
 import { Routes, Route } from "react-router-dom";
-import WeatherPage from "./pages/Weather";
-import ForecastDayPage from "./pages/ForecastDayPage";
+import WeatherPage from "./Pages/Weather";
+import ForecastDayPage from "./Pages/ForecastDayPage";
 
 function App() {
   return (

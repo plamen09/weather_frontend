@@ -49,7 +49,7 @@
   }
 }
 .weather-detail {
-  animation: detailAuto 10s ease-in-out infinite;
+  animation: detailAuto 20s ease-in-out infinite;
 }
 
 @keyframes detailAuto {
@@ -97,7 +97,7 @@
   }
 }
 .forcast-detail {
-  animation: detailAuto 10s ease-in-out infinite;
+  animation: detailAuto 20s ease-in-out infinite;
 }
 
 @keyframes detailAuto {
