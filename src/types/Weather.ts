@@ -18,7 +18,6 @@ export interface CurrentWeather {
   Uv: number;
   ChanceOfRain: number;
   IsDay: number;
-
   Condition: WeatherCondition;
 }
 

@@ -53,13 +53,15 @@ function ForecastDayPage() {
       </div>
     );
   }
+
   if (!day) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-700 p-6 text-white">
-        Forecast not found.
+        {error ?? "Forecast not found."}
       </div>
     );
   }
+
   const dayName = new Date(day.Date).toLocaleDateString("en-US", {
     weekday: "long",
   });
