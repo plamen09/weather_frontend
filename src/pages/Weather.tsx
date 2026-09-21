@@ -250,7 +250,7 @@ function WeatherPage() {
                 },
                 {
                   icon: CloudRain,
-                  label: "Chance of rain",
+                  label: "Chance of  rain",
                   value: `${weather.ChanceOfRain}%`,
                 },
               ].map((detail, index) => (
