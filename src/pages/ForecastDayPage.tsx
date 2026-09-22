@@ -1,21 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { weatherClient } from "../api/WeatherClient";
-import type { ForcastDetailProps, ForecastDay } from "../Types/Forcast";
-
-function ForcastDetail({ label, value, delay = 0 }: ForcastDetailProps) {
-  return (
-    <div
-      className="forcast-detail flex items-center justify-between rounded-xl border border-white/20 bg-white/10 p-4 transition-all duration-300 hover:-translate-y-1 hover:bg-white/20 hover:shadow-lg"
-      style={{
-        animationDelay: `${delay}ms`,
-      }}
-    >
-      <span className="text-lg">{label}</span>
-      <strong className="text-lg">{value}</strong>
-    </div>
-  );
-}
+import type { ForecastDay } from "../types/Forecast";
+import type { ForecastDetailProps } from "../types/WeatherDetail";
 
 function ForecastDayPage() {
   const { city, date } = useParams();
@@ -27,44 +14,79 @@ function ForecastDayPage() {
   useEffect(() => {
     const loadForecast = async () => {
       if (!city || !date) {
+        setError("City or date is missing");
+        setLoading(false);
         return;
       }
 
       try {
         setLoading(true);
-        setError(null)
+        setError(null);
         const forecast = await weatherClient.GetForecast(city);
 
         const selectedDay = forecast.find((item) => item.Date === date);
         setDay(selectedDay ?? null);
       } catch {
-        setError("forcast not found!")
+        setError("Forecast not found!");
       } finally {
         setLoading(false);
       }
     };
     loadForecast();
   }, [city, date]);
-
+  function ForcastDetail({ label, value, delay = 0 }: ForecastDetailProps) {
+    return (
+      <div
+        className="forcast-detail flex items-center justify-between rounded-xl border border-white/20 bg-white/10 p-4 transition-all duration-300 hover:-translate-y-1 hover:bg-white/20 hover:shadow-lg"
+        style={{
+          animationDelay: `${delay}ms`,
+        }}
+      >
+        <span className="text-lg">{label}</span>
+        <strong className="text-lg">{value}</strong>
+      </div>
+    );
+  }
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-700 p-6 text-white">
+      <div className="min-h-screen bg-linear-to-br from-sky-400 via-blue-500 to-indigo-700 p-6 text-white">
         Loading...
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="min-h-screen bg-linear-to-br from-sky-400 via-blue-500 to-indigo-700 p-6 text-white">
+        {error}
       </div>
     );
   }
   if (!day) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-700 p-6 text-white">
+      <div className="min-h-screen bg-linear-to-br from-sky-400 via-blue-500 to-indigo-700 p-6 text-white">
         Forecast not found.
       </div>
     );
   }
+
   const dayName = new Date(day.Date).toLocaleDateString("en-US", {
     weekday: "long",
   });
+//   const now = new Date();
+
+//   const visibleHours = day.Hours.filter((hours) => {
+//     const hourTime = new Date(hours.Time.replace("", "T"));
+//     const IsToday =
+//       hourTime.getFullYear() === now.getFullYear() &&
+//       hourTime.getMonth() === now.getMonth() &&
+//       hourTime.getDate() === now.getDate();
+//     if (!IsToday) {
+//       return true;
+//     }
+//     return hourTime >= now;
+//   });
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-700 p-6">
+    <div className="min-h-screen bg-linear-to-br from-sky-400 via-blue-500 to-indigo-700 p-6">
       <div className="mx-auto max-w-3xl rounded-3xl border border-white/20 bg-white/15 p-8 text-white shadow-2xl backdrop-blur-xl">
         <button
           onClick={() => navigate(`/?city=${encodeURIComponent(city!)}`)}
@@ -127,26 +149,11 @@ function ForecastDayPage() {
 
         <div className="mt-8 space-y-3">
           {[
-            {
-              label: "Maximum temerature",
-              value: `${day.MaxTempC}C`,
-            },
-            {
-              label: "Minimum temperature",
-              value: `${day.MinTempC}C`,
-            },
-            {
-              label: "Wind",
-              value: `${day.WindKPH}km/h`,
-            },
-            {
-              label: "Cloud",
-              value: `${day.Cloud}%`,
-            },
-            {
-              label: "Chanse of rain",
-              value: `${day.ChanceOfRain}%`,
-            },
+            { label: "Maximum temperature", value: `${day.MaxTempC}°C` },
+            { label: "Minimum temperature", value: `${day.MinTempC}°C` },
+            { label: "Wind", value: `${day.WindKPH} km/h` },
+            { label: "Cloud", value: `${day.Cloud}%` },
+            { label: "Chance of rain", value: `${day.ChanceOfRain}%` },
           ].map((detail, index) => (
             <div
               key={detail.label}
@@ -154,7 +161,6 @@ function ForecastDayPage() {
               style={{ animationDelay: `${index * 400}ms` }}
             >
               <ForcastDetail
-                key={detail.label}
                 label={detail.label}
                 value={detail.value}
                 delay={index * 400}

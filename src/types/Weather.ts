@@ -1,4 +1,3 @@
-import type { LucideIcon } from "lucide-react";
 
 export interface WeatherCondition {
   text: string;
@@ -21,12 +20,3 @@ export interface CurrentWeather {
 
   Condition: WeatherCondition;
 }
-
-export type WeatherDetailProps = {
-  icon: LucideIcon;
-  label: string;
-  value: string | number;
-  delay?: number;
-};
-
-

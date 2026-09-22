@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
-
 import "../App.css";
-
-import type { CurrentWeather, WeatherDetailProps } from "../Types/Weather";
-
+import type { CurrentWeather } from "../types/Weather";
 import {
   Cloud,
   CloudRain,
@@ -14,7 +11,11 @@ import {
 } from "lucide-react";
 import { weatherClient } from "../api/WeatherClient";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import type { ForecastDay } from "../Types/Forcast";
+import type { ForecastDay } from "../types/Forecast";
+import type {
+  WeatherDetailItem,
+  WeatherDetailProps,
+} from "../types/WeatherDetail";
 
 function WeatherDetail({
   icon: Icon,
@@ -39,7 +40,6 @@ function WeatherDetail({
     </div>
   );
 }
-
 function WeatherPage() {
   const [city, setCity] = useState("");
   const [weather, setWeather] = useState<CurrentWeather | null>(null);
@@ -48,101 +48,97 @@ function WeatherPage() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-
   const cityFromUrl = searchParams.get("city");
-  const searchWeather = async () => {
-    const trimmedCity = city.trim();
 
-    if (!trimmedCity) {
-      setError("Please enter a city name");
-      return;
-    }
-
+  const fetchWeather = async (location: string) => {
     try {
       setLoading(true);
       setError(null);
 
-      const [result, forecastResult] = await Promise.all([
-        weatherClient.GetCurrentWeather(trimmedCity),
-        weatherClient.GetForecast(trimmedCity),
+      const [weatherResult, forecastResult] = await Promise.all([
+        weatherClient.GetCurrentWeather(location),
+        weatherClient.GetForecast(location),
       ]);
-
-      setWeather(result);
+      setWeather(weatherResult);
       setForecast(forecastResult);
-      navigate(`/?city=${encodeURIComponent(trimmedCity)}`);
     } catch {
       setWeather(null);
       setForecast([]);
-      setError("Could not find weather for this city");
+      setError("Coud not load weather");
     } finally {
       setLoading(false);
     }
   };
+  const searchWeather = async () => {
+    const trimmedCity = city.trim();
+    if (!trimmedCity) {
+      setError("!EROOR ERROR ERROR! ");
+      return;
+    }
+    navigate(`?city=${encodeURIComponent(trimmedCity)}`);
+  };
+
   useEffect(() => {
     if (!cityFromUrl) {
       return;
     }
-
-    const loadWeather = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        setCity(cityFromUrl);
-
-        const [weatherResult, forecastResult] = await Promise.all([
-          weatherClient.GetCurrentWeather(cityFromUrl),
-          weatherClient.GetForecast(cityFromUrl),
-        ]);
-
-        setWeather(weatherResult);
-        setForecast(forecastResult);
-      } catch {
-        setWeather(null);
-        setError("Could not load weather");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadWeather();
+    setCity(cityFromUrl);
+    fetchWeather(cityFromUrl);
   }, [cityFromUrl]);
 
   const getCurrentLocation = () => {
     navigator.geolocation.getCurrentPosition(
-      async (position) => {
+      (position) => {
         const latitude = position.coords.latitude;
         const longitude = position.coords.longitude;
-
         const location = `${latitude},${longitude}`;
-
-        try {
-          setLoading(true);
-          setError(null);
-
-          const [result, forecastResult] = await Promise.all([
-            weatherClient.GetCurrentWeather(location),
-            weatherClient.GetForecast(location),
-          ]);
-
-          setWeather(result);
-          setForecast(forecastResult);
-        } catch {
-          setWeather(null);
-          setForecast([]);
-          setError("Failed to get weather");
-        } finally {
-          setLoading(false);
-        }
+        fetchWeather(location);
       },
-
       () => {
-        setError("Could not get your location");
+        setError("Could not get your location!");
       },
     );
   };
+
+  const weatherDetails: WeatherDetailItem[] = weather
+    ? [
+        {
+          icon: Thermometer,
+          label: "Feels like",
+          value: `${weather.FeelsLikeC}°C`,
+        },
+        {
+          icon: HazeIcon,
+          label: "Heat index",
+          value: `${weather.HeatIndexC}°C`,
+        },
+        { icon: Wind, label: "Wind", value: `${weather.WindKPH} km/h` },
+        { icon: Cloud, label: "Cloud", value: `${weather.Cloud}%` },
+        { icon: Sun, label: "UV", value: `${weather.Uv}` },
+        {
+          icon: CloudRain,
+          label: "Chance of rain",
+          value: `${weather.ChanceOfRain}%`,
+        },
+      ]
+    : [];
+
+  const now = new Date();
+  const firstForecastDay = forecast[0];
+  const visibleHours =
+    firstForecastDay?.Hours.filter((hours) => {
+      const hourTime = new Date(hours.Time.replace(" ", "T"));
+      const IsToday =
+        hourTime.getFullYear() === now.getFullYear() &&
+        hourTime.getMonth() === now.getMonth() &&
+        hourTime.getDate() === now.getDate();
+      if (!IsToday) {
+        return true;
+      }
+      return hourTime >= now;
+    }) ?? [];
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-700 p-6">
+    <div className="min-h-screen w-full bg-linear-to-br from-sky-400 via-blue-500 to-indigo-700 p-6">
       <div className="mx-auto max-w-4xl rounded-3xl border border-white/20 bg-white/15 p-8 text-white shadow-2xl backdrop-blur-xl">
         <h1 className="text-3xl font-bold">Weather</h1>
 
@@ -167,7 +163,6 @@ function WeatherPage() {
 
           <button
             type="submit"
-            onClick={() => navigate(`/?city=${encodeURIComponent(city!)}`)}
             disabled={city.trim() === "" || loading}
             className="rounded-xl bg-white px-6 py-3 font-semibold text-blue-700 transition-all  duration-200 hover:scale-105  hover:bg-blue-50 active:scale-95 disabled:opacity-50 "
           >
@@ -221,39 +216,43 @@ function WeatherPage() {
               </p>
             </div>
 
+            <div className="flex gap-3 overflow-x-auto pb-4">
+              {visibleHours.map((hour) => (
+                <div
+                  key={hour.Time}
+                  className="min-w-32 rounded-xl border border-white/20 bg-white/10 p-4 text-center transition-all duration-300 hover:-translate-y-1 hover:bg-white/20"
+                >
+                  <p className="text-sm text-white/60">
+                    {new Date(hour.Time.replace(" ", "T")).toLocaleTimeString(
+                      "en-US",
+                      {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      },
+                    )}
+                  </p>
+
+                  <img
+                    src={`https:${hour.Condition.icon}`}
+                    alt={hour.Condition.text}
+                    className="mx-auto h-12 w-12"
+                  />
+
+                  <strong className="block text-xl">{hour.TempC}°C</strong>
+
+                  <p className="mt-1 text-xs text-white/60">
+                    {hour.Condition.text}
+                  </p>
+
+                  <p className="mt-2 text-sm text-sky-200">
+                    💧 {hour.ChanceOfRain}%
+                  </p>
+                </div>
+              ))}
+            </div>
+
             <div className="flex flex-col gap-3">
-              {[
-                {
-                  icon: Thermometer,
-                  label: "Feels like",
-                  value: `${weather.FeelsLikeC}°C`,
-                },
-                {
-                  icon: HazeIcon,
-                  label: "Heat index",
-                  value: `${weather.HeatIndexC}°C`,
-                },
-                {
-                  icon: Wind,
-                  label: "Wind",
-                  value: `${weather.WindKPH} km/h`,
-                },
-                {
-                  icon: Cloud,
-                  label: "Cloud",
-                  value: `${weather.Cloud}%`,
-                },
-                {
-                  icon: Sun,
-                  label: "UV",
-                  value: weather.Uv,
-                },
-                {
-                  icon: CloudRain,
-                  label: "Chance of  rain",
-                  value: `${weather.ChanceOfRain}%`,
-                },
-              ].map((detail, index) => (
+              {weatherDetails.map((detail, index) => (
                 <div
                   key={detail.label}
                   className="detail-enter"
@@ -268,6 +267,7 @@ function WeatherPage() {
                   />
                 </div>
               ))}
+
               <div className="mt-8">
                 <h3 className="mb-4 text-xl font-semibold">Forecast</h3>
 
