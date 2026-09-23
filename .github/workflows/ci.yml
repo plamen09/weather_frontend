@@ -1,0 +1,5 @@
+name: React CI Pipeline
+on: 
+branches: [main]
+pull_request:
+branches: [main]
